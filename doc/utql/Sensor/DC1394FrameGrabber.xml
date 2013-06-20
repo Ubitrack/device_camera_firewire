@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<UTQLPatternTemplates xmlns='http://ar.in.tum.de/ubitrack/utql'
+                      xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+                      xmlns:xi='http://www.w3.org/2001/XInclude'
+                      xmlns:h="http://www.w3.org/1999/xhtml"
+                      xsi:schemaLocation='http://ar.in.tum.de/ubitrack/utql ../../../schema/utql_templates.xsd'>
+
+    <Pattern name="DC1394FrameGrabber" displayName="Firewire Frame Grabber (Single Camera)">
+        <Description>
+            <h:p>
+                This component grabs images from an IEEE 1394 (Firewire) camera device and pushes them.
+            </h:p>
+        </Description>
+        <Output>
+            <Node name="Camera" displayName="Camera">
+                <Attribute name="resolution" xsi:type="IntArrayAttributeReferenceType"/>
+            </Node>
+            <Node name="ImagePlane" displayName="Image Plane" />
+            <Edge name="Output" source="Camera" destination="ImagePlane" displayName="Greyscale Image">
+                <Description>
+                    <h:p>The camera image (greyscale).</h:p>
+                </Description>
+                <Attribute name="type" value="Image" xsi:type="EnumAttributeReferenceType"/>
+                <Attribute name="mode" value="push" xsi:type="EnumAttributeReferenceType"/>
+            </Edge>
+            <Edge name="ColorOutput" source="Camera" destination="ImagePlane" displayName="Color Image">
+                <Description>
+                    <h:p>The camera image (color).</h:p>
+                </Description>
+                <Attribute name="type" value="Image" xsi:type="EnumAttributeReferenceType"/>
+                <Attribute name="mode" value="push" xsi:type="EnumAttributeReferenceType"/>
+            </Edge>
+        </Output>
+        <DataflowConfiguration>
+            <UbitrackLib class="DC1394FrameGrabber" />
+            <Attribute name="CamId" default="0" xsi:type="IntAttributeDeclarationType" displayName="Camera ID">
+                <Description>
+                    <h:p>The Camera ID in order of recognition (unreliable) .. might be replaced with Camera GUID later.</h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="MaxFramerate" default="30" xsi:type="IntAttributeDeclarationType" displayName="Maximum Framerate">
+                <Description>
+                    <h:p>Maximum Framerate for configuring IDDC Cameras .. select mode that does not exeed max framerate.</h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="BusSpeed" default="400" xsi:type="IntAttributeDeclarationType" displayName="ISO bus speed">
+                <Description>
+                    <h:p>ISO speed of the firewire bus.(100, 200, 400). If set to less than 100 it halves the framerate each 10 less. (400=max, 200=max/2, 100=max/4, 90=max/8....)</h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="Shutter" min="-1" default="-1" xsi:type="IntAttributeDeclarationType" displayName="Shutter time">
+                <Description>
+                    <h:p>Desired shutter time or -1 for automatic shutter. This value does not have a direct relation to time in [s]. Note that this is only a recommendation and the actual
+                    size will depend on the capabilities of the camera driver. For automatic shutter, adjust the <h:code>Auto exposure</h:code> attribute properly</h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="AutoExp" min="0" default="100" xsi:type="IntAttributeDeclarationType" displayName="Automatic exposure">
+                <Description>
+                    <h:p>Desired automatic exposure value. The value does not have a direct relation to time in [s]. Note that this is only a recommendation and the actual
+                    size will depend on the capabilities of the camera driver. This value is meaningless if automatic shutter is disabled. To enable automatic shutter, set the <h:code>Shutter time</h:code> attribute to -1.</h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="Gain" min="-1" default="0" xsi:type="IntAttributeDeclarationType" displayName="CCD gain">
+                <Description>
+                    <h:p>CCD gain, should be set to 0 under good lighting conditions for maximum image quality. -1 enables automatic gain control. Note that this is only a recommendation and the actual
+                    size will depend on the capabilities of the camera driver. </h:p>
+                </Description>
+            </Attribute>
+			<!--
+            <Attribute name="divisor" min="1" default="1" xsi:type="IntAttributeDeclarationType" displayName="Divisor">
+                <Description>
+                    <h:p>Only send out every n-th frame. This is used to limit the frame rate.</h:p>
+                </Description>
+            </Attribute>
+			-->
+        </DataflowConfiguration>
+    </Pattern>
+
+    <!-- Attribute declarations -->
+
+    <GlobalNodeAttributeDeclarations>
+        <xi:include href="file:GlobalAttrSpec.xml" xpointer="element(/1/1/1)" />
+        <xi:include href="file:GlobalAttrSpec.xml" xpointer="element(/1/1/2)" />
+        <xi:include href="file:GlobalAttrSpec.xml" xpointer="element(/1/1/3)" />
+    </GlobalNodeAttributeDeclarations>
+
+    <GlobalEdgeAttributeDeclarations>
+        <xi:include href="file:GlobalAttrSpec.xml" xpointer="element(/1/2/1)" />
+        <xi:include href="file:GlobalAttrSpec.xml" xpointer="element(/1/2/2)" />
+        <xi:include href="file:GlobalAttrSpec.xml" xpointer="element(/1/2/3)" />
+        <xi:include href="file:GlobalAttrSpec.xml" xpointer="element(/1/2/4)" />
+        <xi:include href="file:GlobalAttrSpec.xml" xpointer="element(/1/2/5)" />
+        <xi:include href="file:GlobalAttrSpec.xml" xpointer="element(/1/2/6)" />
+        <xi:include href="file:GlobalAttrSpec.xml" xpointer="element(/1/2/7)" />
+        <xi:include href="file:GlobalAttrSpec.xml" xpointer="element(/1/2/8)" />
+    </GlobalEdgeAttributeDeclarations>
+
+    <GlobalDataflowAttributeDeclarations>
+        <!-- Unfortunately, the xpointer used in Xinclude is currently restricted to the element scheme and absolute element indices in Xerces (and thus XMLBeans) -->
+        <xi:include href="file:GlobalAttrSpec.xml" xpointer="element(/1/3/1)" />
+        <xi:include href="file:GlobalAttrSpec.xml" xpointer="element(/1/3/2)" />
+    </GlobalDataflowAttributeDeclarations>
+
+</UTQLPatternTemplates>
