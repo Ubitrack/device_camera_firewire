@@ -67,6 +67,21 @@
                     size will depend on the capabilities of the camera driver. </h:p>
                 </Description>
             </Attribute>
+            <Attribute name="Mode" min="0" default="0" xsi:type="IntAttributeDeclarationType" displayName="Camera Mode">
+                <Description>
+                    <h:p>Camera Mode (integer) dependent on firewire camera. </h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="SizeX" min="0" default="800" xsi:type="IntAttributeDeclarationType" displayName="Image Size X">
+                <Description>
+                    <h:p>Width of the Image (Size X). </h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="SizeY" min="0" default="640" xsi:type="IntAttributeDeclarationType" displayName="Image Size Y">
+                <Description>
+                    <h:p>Height of the Image (Size Y). </h:p>
+                </Description>
+            </Attribute>
 			<!--
             <Attribute name="divisor" min="1" default="1" xsi:type="IntAttributeDeclarationType" displayName="Divisor">
                 <Description>
