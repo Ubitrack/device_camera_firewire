@@ -168,6 +168,7 @@ protected:
 	unsigned int m_camid;
 	int m_shutter;
 	int m_gain;
+	int m_brightness;
 	unsigned int m_auto_exp;
 	unsigned int m_divisor;
 	unsigned int m_divisor_count;
@@ -221,12 +222,14 @@ DC1394FrameGrabber::DC1394FrameGrabber( const std::string& sName, boost::shared_
 	, m_shutter( -1 )
 	, m_gain( 0 )
 	, m_auto_exp( 100 )
+	, m_brightness( 200 )
 	, m_divisor( 1 )
 	, m_divisor_count( 0 )
 	, m_deBayer( 0 )
 {
 	subgraph->m_DataflowAttributes.getAttributeData( "Shutter", m_shutter );
 	subgraph->m_DataflowAttributes.getAttributeData( "AutoExp", m_auto_exp );
+	subgraph->m_DataflowAttributes.getAttributeData( "Brightness", m_brightness );
 	subgraph->m_DataflowAttributes.getAttributeData( "Gain", m_gain );
 	subgraph->m_DataflowAttributes.getAttributeData( "Divisor", m_divisor );
 	subgraph->m_DataflowAttributes.getAttributeData( "DeBayer", m_deBayer );
@@ -348,8 +351,8 @@ int DC1394FrameGrabber::camera_setup()
 		float fMin, fMax;
 		err = dc1394_feature_get_absolute_boundaries( m_camera, DC1394_FEATURE_BRIGHTNESS, &fMin, &fMax );
 		LOG4CPP_INFO( logger, "DC1394_FEATURE_BRIGHTNESS absolute boundaries: " << err << ", min/max: " << fMin << "/" << fMax );
-		err = dc1394_feature_set_value( m_camera, DC1394_FEATURE_BRIGHTNESS, 0 );
-		LOG4CPP_INFO( logger, "DC1394_FEATURE_BRIGHTNESS set feature to 0, status: " << err );
+		err = dc1394_feature_set_value( m_camera, DC1394_FEATURE_BRIGHTNESS, m_brightness );
+		LOG4CPP_INFO( logger, "DC1394_FEATURE_BRIGHTNESS set feature to " << m_brightness << ", status: " << err );
 	}
 	
 	// This is only relevant for auto-shutter, see DC1394_FEATURE_SHUTTER
