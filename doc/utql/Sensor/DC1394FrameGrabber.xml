@@ -17,6 +17,115 @@
                 <Attribute name="resolution" xsi:type="IntArrayAttributeReferenceType"/>
             </Node>
             <Node name="ImagePlane" displayName="Image Plane" />
+	    <Edge name="Intrinsics" source="Camera"	destination="ImagePlane" displayName="Camera Intrinsics">
+		<Description>
+			<h:p>The intrinsic camera matrix.</h:p>
+		</Description>
+		<Attribute name="type" value="3x3Matrix" xsi:type="EnumAttributeReferenceType"/>
+		<Attribute name="mode" value="pull" xsi:type="EnumAttributeReferenceType"/>
+	    </Edge>
+            <Edge name="Output" source="Camera" destination="ImagePlane" displayName="Greyscale Image">
+                <Description>
+                    <h:p>The camera image (greyscale).</h:p>
+                </Description>
+                <Attribute name="type" value="Image" xsi:type="EnumAttributeReferenceType"/>
+                <Attribute name="mode" value="push" xsi:type="EnumAttributeReferenceType"/>
+            </Edge>
+            <Edge name="ColorOutput" source="Camera" destination="ImagePlane" displayName="Color Image">
+                <Description>
+                    <h:p>The camera image (color).</h:p>
+                </Description>
+                <Attribute name="type" value="Image" xsi:type="EnumAttributeReferenceType"/>
+                <Attribute name="mode" value="push" xsi:type="EnumAttributeReferenceType"/>
+            </Edge>
+        </Output>
+        <DataflowConfiguration>
+            <UbitrackLib class="DC1394FrameGrabber" />
+            <Attribute name="CamId" default="0" xsi:type="IntAttributeDeclarationType" displayName="Camera ID">
+                <Description>
+                    <h:p>The Camera ID in order of recognition (unreliable) .. might be replaced with Camera GUID later.</h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="MaxFramerate" default="30" xsi:type="IntAttributeDeclarationType" displayName="Maximum Framerate">
+                <Description>
+                    <h:p>Maximum Framerate for configuring IDDC Cameras .. select mode that does not exeed max framerate.</h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="BusSpeed" default="400" xsi:type="IntAttributeDeclarationType" displayName="ISO bus speed">
+                <Description>
+                    <h:p>ISO speed of the firewire bus.(100, 200, 400). If set to less than 100 it halves the framerate each 10 less. (400=max, 200=max/2, 100=max/4, 90=max/8....)</h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="Shutter" min="-1" default="-1" xsi:type="IntAttributeDeclarationType" displayName="Shutter time">
+                <Description>
+                    <h:p>Desired shutter time or -1 for automatic shutter. This value does not have a direct relation to time in [s]. Note that this is only a recommendation and the actual
+                    size will depend on the capabilities of the camera driver. For automatic shutter, adjust the <h:code>Auto exposure</h:code> attribute properly</h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="AutoExp" min="0" default="100" xsi:type="IntAttributeDeclarationType" displayName="Automatic exposure">
+                <Description>
+                    <h:p>Desired automatic exposure value. The value does not have a direct relation to time in [s]. Note that this is only a recommendation and the actual
+                    size will depend on the capabilities of the camera driver. This value is meaningless if automatic shutter is disabled. To enable automatic shutter, set the <h:code>Shutter time</h:code> attribute to -1.</h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="Brightness" min="0" default="200" xsi:type="IntAttributeDeclarationType" displayName="Brightness">
+                <Description>
+                    <h:p>sets the Brightness control value for the camera.</h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="Gain" min="-1" default="0" xsi:type="IntAttributeDeclarationType" displayName="CCD gain">
+                <Description>
+                    <h:p>CCD gain, should be set to 0 under good lighting conditions for maximum image quality. -1 enables automatic gain control. Note that this is only a recommendation and the actual
+                    size will depend on the capabilities of the camera driver. </h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="Mode" min="0" default="0" xsi:type="IntAttributeDeclarationType" displayName="Camera Mode">
+                <Description>
+                    <h:p>Camera Mode (integer) dependent on firewire camera. </h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="SizeX" min="0" default="640" xsi:type="IntAttributeDeclarationType" displayName="Image Size X">
+                <Description>
+                    <h:p>Width of the Image (Size X). </h:p>
+                </Description>
+            </Attribute>
+            <Attribute name="SizeY" min="0" default="480" xsi:type="IntAttributeDeclarationType" displayName="Image Size Y">
+                <Description>
+                    <h:p>Height of the Image (Size Y). </h:p>
+                </Description>
+            </Attribute>
+			<!--
+            <Attribute name="divisor" min="1" default="1" xsi:type="IntAttributeDeclarationType" displayName="Divisor">
+                <Description>
+                    <h:p>Only send out every n-th frame. This is used to limit the frame rate.</h:p>
+                </Description>
+            </Attribute>
+			-->
+            <Attribute name="intrinsicMatrixFile" default="CamMatrix.calib" displayName="Intrinsic matrix file" xsi:type="PathAttributeDeclarationType">
+                <Description>
+                	<h:p>Optional file where the camera intrinsic matrix will be read from. This is necessary to 
+                	undistort the image. The matrix is also provided to other components via the 
+                	<h:code>Intrinsics</h:code> port</h:p>
+               	</Description>
+            </Attribute>
+            <Attribute name="distortionFile" default="CamCoeffs.calib" displayName="Distortion file" xsi:type="PathAttributeDeclarationType">
+                <Description><h:p>Optional file where radial distortion coefficients will be read from. This is necessary to
+                undistort the image. </h:p></Description>
+            </Attribute>
+        </DataflowConfiguration>
+    </Pattern>
+
+    <Pattern name="DC1394FrameGrabberUncalibrated" displayName="Firewire Frame Grabber (Uncalibrated, Single Camera)">
+        <Description>
+            <h:p>
+                This component grabs images from an IEEE 1394 (Firewire) camera device and pushes them.
+            </h:p>
+        </Description>
+        <Output>
+            <Node name="Camera" displayName="Camera">
+                <Attribute name="resolution" xsi:type="IntArrayAttributeReferenceType"/>
+            </Node>
+            <Node name="ImagePlane" displayName="Image Plane" />
             <Edge name="Output" source="Camera" destination="ImagePlane" displayName="Greyscale Image">
                 <Description>
                     <h:p>The camera image (greyscale).</h:p>

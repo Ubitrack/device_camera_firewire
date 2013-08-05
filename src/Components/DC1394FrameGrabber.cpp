@@ -42,11 +42,13 @@
 #include <boost/tuple/tuple.hpp>
 
 #include <utDataflow/PushSupplier.h>
+#include <utDataflow/PullSupplier.h>
 #include <utDataflow/Component.h>
 #include <utDataflow/ComponentFactory.h>
 #include <utMeasurement/Measurement.h>
 #include <utUtil/OS.h>
 #include <utVision/Image.h>
+#include <utVision/Undistortion.h>
 #include <opencv/cv.h>
 
 #include <dc1394/control.h>
@@ -135,6 +137,17 @@ public:
 	/** Component stop method, stops thread */
 	virtual void stop();
 
+	/** handler method for incoming pull requests */
+
+	Measurement::Matrix3x3 getIntrinsic( Measurement::Timestamp t )
+	{
+		if (m_undistorter) {
+			return Measurement::Matrix3x3( t, m_undistorter->getIntrinsics() );
+		} else {
+			UBITRACK_THROW( "No undistortion configured for DC1394FrameGrabber" );
+		}
+	}
+
 protected:
 	// thread main loop
 	void ThreadProc();
@@ -152,8 +165,12 @@ protected:
 	volatile bool m_bStop;
 
 	// the ports
-	Dataflow::PushSupplier< Measurement::ImageMeasurement >* m_colorPort;
-	Dataflow::PushSupplier< Measurement::ImageMeasurement >* m_greyPort;
+	Dataflow::PushSupplier< Measurement::ImageMeasurement > m_colorPort;
+	Dataflow::PushSupplier< Measurement::ImageMeasurement > m_greyPort;
+	Dataflow::PullSupplier< Measurement::Matrix3x3 > m_intrinsicsPort;
+
+	/** undistorter */
+	boost::shared_ptr<Vision::Undistortion> m_undistorter;
 
 	// camera data structures
 	dc1394camera_t* m_camera;
@@ -226,6 +243,10 @@ DC1394FrameGrabber::DC1394FrameGrabber( const std::string& sName, boost::shared_
 	, m_divisor( 1 )
 	, m_divisor_count( 0 )
 	, m_deBayer( 0 )
+	, m_colorPort( "ColorOutput", *this )
+	, m_greyPort( "Output", *this )
+	, m_intrinsicsPort( "Intrinsics", *this, boost::bind( &DC1394FrameGrabber::getIntrinsic, this, _1 ) )
+
 {
 	subgraph->m_DataflowAttributes.getAttributeData( "Shutter", m_shutter );
 	subgraph->m_DataflowAttributes.getAttributeData( "AutoExp", m_auto_exp );
@@ -264,10 +285,14 @@ DC1394FrameGrabber::DC1394FrameGrabber( const std::string& sName, boost::shared_
 
  	LOG4CPP_INFO( logger, "Set camera resolution: " << m_width << "x" << m_height );
 
+	std::string intrinsicFile = subgraph->m_DataflowAttributes.getAttributeString( "intrinsicMatrixFile" );
+	std::string distortionFile = subgraph->m_DataflowAttributes.getAttributeString( "distortionFile" );
+
+
+	m_undistorter.reset(new Vision::Undistortion(intrinsicFile, distortionFile));
+
+
  	m_camera_frame->color_coding = DC1394_COLOR_CODING_RGB8;
-	LOG4CPP_INFO( logger, "Create pair of color/greyscale output ports..." );
-	m_colorPort = new Dataflow::PushSupplier< Measurement::ImageMeasurement > ( "ColorOutput", *this );
-	m_greyPort = new Dataflow::PushSupplier< Measurement::ImageMeasurement > ( "Output", *this );
 
 	stop();
 }
@@ -276,8 +301,6 @@ DC1394FrameGrabber::DC1394FrameGrabber( const std::string& sName, boost::shared_
 DC1394FrameGrabber::~DC1394FrameGrabber()
 {
  	stop();
-	delete m_colorPort;
-	delete m_greyPort;
 }
 
 
@@ -491,6 +514,9 @@ void DC1394FrameGrabber::process_frame( )
 
 	boost::shared_ptr< Image > pColorImage;
 	boost::shared_ptr< Image > pGreyImage;
+	bool bColorImageDistorted = true;
+	bool bGreyImageDistorted = true;
+
 	bool has_greyimage = false;
 	bool has_colorimage = false;
 
@@ -543,23 +569,31 @@ void DC1394FrameGrabber::process_frame( )
 	}
 	*/
 
-	if (m_colorPort->isConnected()) {
+	if (m_colorPort.isConnected()) {
 		if (has_colorimage) {
+			pColorImage = m_undistorter->undistort( pColorImage );
+			bColorImageDistorted = false;
 			boost::shared_ptr< Image > bgr_img = pColorImage->CvtColor( CV_RGB2BGR, 3 );
-			m_colorPort->send( Measurement::ImageMeasurement( time, bgr_img ) );
+			m_colorPort.send( Measurement::ImageMeasurement( time, bgr_img ) );
 		} else if(has_greyimage) {
+			pGreyImage = m_undistorter->undistort( pGreyImage );
+			bGreyImageDistorted = false;
 			pColorImage = pGreyImage->CvtColor( CV_GRAY2BGR, 0 );
-			m_colorPort->send( Measurement::ImageMeasurement( time, pColorImage ) );
+			m_colorPort.send( Measurement::ImageMeasurement( time, pColorImage ) );
 		}
 	}
 
-	if (m_greyPort->isConnected()) {
+	if (m_greyPort.isConnected()) {
 		if (has_greyimage) {
+			if (bGreyImageDistorted)
+				pGreyImage = m_undistorter->undistort( pGreyImage );
 			memcpy( pGreyImage->imageData, frame->image, m_width * m_height );
-			m_greyPort->send( Measurement::ImageMeasurement( time, pGreyImage ) );
+			m_greyPort.send( Measurement::ImageMeasurement( time, pGreyImage ) );
 		} else if(has_colorimage) {
+			if (bColorImageDistorted)
+				pColorImage = m_undistorter->undistort( pColorImage );
 			pGreyImage = pColorImage->CvtColor( CV_RGB2GRAY, 1 );
-			m_greyPort->send( Measurement::ImageMeasurement( time, pGreyImage ) );
+			m_greyPort.send( Measurement::ImageMeasurement( time, pGreyImage ) );
 		}
 	}
 
