@@ -112,6 +112,15 @@
                 <Description><h:p>Optional file where radial distortion coefficients will be read from. This is necessary to
                 undistort the image. </h:p></Description>
             </Attribute>
+            <Attribute name="uploadImageOnGPU" displayName="Automatic Upload on GPU" default="false" xsi:type="EnumAttributeDeclarationType">
+                    <Description>
+                        <h:p>
+                            Each grabbed Image is automatically uploaded to the GPU for further processing. Attention: Uploading and downloading images from the GPU is time consuming.
+                        </h:p>
+                    </Description>
+                    <EnumValue name="false" displayName="False"/>
+                    <EnumValue name="true"  displayName="True"/>
+            </Attribute>
         </DataflowConfiguration>
     </Pattern>
 
@@ -196,13 +205,15 @@
                     <h:p>Height of the Image (Size Y). </h:p>
                 </Description>
             </Attribute>
-			<!--
-            <Attribute name="divisor" min="1" default="1" xsi:type="IntAttributeDeclarationType" displayName="Divisor">
-                <Description>
-                    <h:p>Only send out every n-th frame. This is used to limit the frame rate.</h:p>
-                </Description>
+            <Attribute name="uploadImageOnGPU" displayName="Automatic Upload on GPU" default="false" xsi:type="EnumAttributeDeclarationType">
+                    <Description>
+                        <h:p>
+                            Each grabbed Image is automatically uploaded to the GPU for further processing. Attention: Uploading and downloading images from the GPU is time consuming.
+                        </h:p>
+                    </Description>
+                    <EnumValue name="false" displayName="False"/>
+                    <EnumValue name="true"  displayName="True"/>
             </Attribute>
-			-->
         </DataflowConfiguration>
     </Pattern>
 
