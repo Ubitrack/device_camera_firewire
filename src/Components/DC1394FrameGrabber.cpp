@@ -50,6 +50,7 @@
 #include <utVision/Image.h>
 #include <utVision/Undistortion.h>
 #include <opencv/cv.h>
+#include <utVision/OpenCLManager.h>
 
 #include <dc1394/control.h>
 #include <dc1394/conversions.h>
@@ -291,9 +292,12 @@ DC1394FrameGrabber::DC1394FrameGrabber( const std::string& sName, boost::shared_
 	std::string intrinsicFile = subgraph->m_DataflowAttributes.getAttributeString( "intrinsicMatrixFile" );
 	std::string distortionFile = subgraph->m_DataflowAttributes.getAttributeString( "distortionFile" );
 
-	if (subgraph->m_DataflowAttributes.hasAttribute("uploadImageOnGPU")){
-		m_autoGPUUpload = subgraph->m_DataflowAttributes.getAttributeString("uploadImageOnGPU") == "true";
-		LOG4CPP_INFO(logger, "Upload to GPU enabled? " << m_autoGPUUpload);
+	Vision::OpenCLManager& oclManager = Vision::OpenCLManager::singleton();
+	if (oclManager.isEnabled()) {
+		if (subgraph->m_DataflowAttributes.hasAttribute("uploadImageOnGPU")){
+			m_autoGPUUpload = subgraph->m_DataflowAttributes.getAttributeString("uploadImageOnGPU") == "true";
+			LOG4CPP_INFO(logger, "Upload to GPU enabled? " << m_autoGPUUpload);
+		}
 	}
 
 	m_undistorter.reset(new Vision::Undistortion(intrinsicFile, distortionFile));
@@ -580,8 +584,11 @@ void DC1394FrameGrabber::process_frame( )
 	if (m_colorPort.isConnected()) {
 		if (has_colorimage) {
 			if (m_autoGPUUpload){
-				//force upload to the GPU
-				pColorImage->uMat();
+				Vision::OpenCLManager& oclManager = Vision::OpenCLManager::singleton();
+				if (oclManager.isInitialized()) {
+					//force upload to the GPU
+					pColorImage->uMat();
+				}
 			}
 			pColorImage = m_undistorter->undistort( pColorImage );
 			bColorImageDistorted = false;
@@ -589,8 +596,11 @@ void DC1394FrameGrabber::process_frame( )
 			m_colorPort.send( Measurement::ImageMeasurement( time, bgr_img ) );
 		} else if(has_greyimage) {
 			if (m_autoGPUUpload){
-				//force upload to the GPU
-				pGreyImage->uMat();
+				Vision::OpenCLManager& oclManager = Vision::OpenCLManager::singleton();
+				if (oclManager.isInitialized()) {
+					//force upload to the GPU
+					pGreyImage->uMat();
+				}
 			}
 			pGreyImage = m_undistorter->undistort( pGreyImage );
 			bGreyImageDistorted = false;
@@ -605,9 +615,13 @@ void DC1394FrameGrabber::process_frame( )
 				pGreyImage = m_undistorter->undistort( pGreyImage );
 			}
 			memcpy( pGreyImage->iplImage()->imageData, frame->image, m_width * m_height );
+
 			if (m_autoGPUUpload){
-				//force upload to the GPU
-				pGreyImage->uMat();
+				Vision::OpenCLManager& oclManager = Vision::OpenCLManager::singleton();
+				if (oclManager.isInitialized()) {
+					//force upload to the GPU
+					pGreyImage->uMat();
+				}
 			}
 			m_greyPort.send( Measurement::ImageMeasurement( time, pGreyImage ) );
 		} else if(has_colorimage) {
@@ -615,8 +629,11 @@ void DC1394FrameGrabber::process_frame( )
 				pColorImage = m_undistorter->undistort( pColorImage );
 			pGreyImage = pColorImage->CvtColor( CV_RGB2GRAY, 1 );
 			if (m_autoGPUUpload){
-				//force upload to the GPU
-				pGreyImage->uMat();
+				Vision::OpenCLManager& oclManager = Vision::OpenCLManager::singleton();
+				if (oclManager.isInitialized()) {
+					//force upload to the GPU
+					pGreyImage->uMat();
+				}
 			}
 			m_greyPort.send( Measurement::ImageMeasurement( time, pGreyImage ) );
 		}
