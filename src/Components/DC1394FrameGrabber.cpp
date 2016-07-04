@@ -534,32 +534,29 @@ void DC1394FrameGrabber::process_frame( )
     switch( frame->color_coding ) {
 		case DC1394_COLOR_CODING_MONO8:
 			pGreyImage.reset( new Image( m_width, m_height, 1 ) );
-			pGreyImage->iplImage()->origin = 0;
+			pGreyImage->set_origin(0);
+			pGreyImage->set_pixelFormat(Vision::Image::LUMINANCE);
 			has_greyimage = true;
 			break;
 		case DC1394_COLOR_CODING_YUV411:
 		case DC1394_COLOR_CODING_YUV422:
 		case DC1394_COLOR_CODING_YUV444:
 			pColorImage.reset( new Image( m_width, m_height, 3 ) );
-			pColorImage->iplImage()->origin = 0;
-			pColorImage->iplImage()->channelSeq[0]='B';
-			pColorImage->iplImage()->channelSeq[1]='G';
-			pColorImage->iplImage()->channelSeq[2]='R';
+			pGreyImage->set_origin(0);
+			pGreyImage->set_pixelFormat(Vision::Image::BGR);
 			err=dc1394_convert_frames(frame, m_camera_frame);
 			if (err != DC1394_SUCCESS) {
 				LOG4CPP_INFO( logger, "Failed to convert frame");
 			}
-			memcpy( pColorImage->iplImage()->imageData, m_camera_frame->image, m_width * m_height * 3 );
+			memcpy( pColorImage->Mat().data, m_camera_frame->image, m_width * m_height * 3 );
 			//pColorImage->imageData = (char *)(m_camera_frame->image);
 			has_colorimage = true;
 			break;
 		case DC1394_COLOR_CODING_RGB8:
 			pColorImage.reset( new Image( m_width, m_height, 3 ) );
-			pColorImage->iplImage()->origin = 0;
-			pColorImage->iplImage()->channelSeq[0]='R';
-			pColorImage->iplImage()->channelSeq[1]='G';
-			pColorImage->iplImage()->channelSeq[2]='B';
-			memcpy( pColorImage->iplImage()->imageData, frame->image, m_width * m_height * 3 );
+			pGreyImage->set_origin(0);
+			pGreyImage->set_pixelFormat(Vision::Image::RGB);
+			memcpy( pColorImage->Mat().data, frame->image, m_width * m_height * 3 );
 			has_colorimage = true;
 			break;
 		case DC1394_COLOR_CODING_MONO16:
@@ -614,7 +611,7 @@ void DC1394FrameGrabber::process_frame( )
 			if (bGreyImageDistorted) {
 				pGreyImage = m_undistorter->undistort( pGreyImage );
 			}
-			memcpy( pGreyImage->iplImage()->imageData, frame->image, m_width * m_height );
+			memcpy( pGreyImage->Mat().data, frame->image, m_width * m_height );
 
 			if (m_autoGPUUpload){
 				Vision::OpenCLManager& oclManager = Vision::OpenCLManager::singleton();
