@@ -533,7 +533,7 @@ void DC1394FrameGrabber::process_frame( )
 
     switch( frame->color_coding ) {
 		case DC1394_COLOR_CODING_MONO8:
-			pGreyImage.reset( new Image( m_width, m_height, 1 ) );
+			pGreyImage.reset( new Image( m_width, m_height, 1, frame->image ) );
 			pGreyImage->set_origin(0);
 			pGreyImage->set_pixelFormat(Vision::Image::LUMINANCE);
 			has_greyimage = true;
@@ -541,22 +541,19 @@ void DC1394FrameGrabber::process_frame( )
 		case DC1394_COLOR_CODING_YUV411:
 		case DC1394_COLOR_CODING_YUV422:
 		case DC1394_COLOR_CODING_YUV444:
-			pColorImage.reset( new Image( m_width, m_height, 3 ) );
-			pGreyImage->set_origin(0);
-			pGreyImage->set_pixelFormat(Vision::Image::BGR);
 			err=dc1394_convert_frames(frame, m_camera_frame);
 			if (err != DC1394_SUCCESS) {
 				LOG4CPP_INFO( logger, "Failed to convert frame");
 			}
-			memcpy( pColorImage->Mat().data, m_camera_frame->image, m_width * m_height * 3 );
-			//pColorImage->imageData = (char *)(m_camera_frame->image);
+			pColorImage.reset( new Image( m_width, m_height, 3, m_camera_frame->image ) );
+			pColorImage->set_origin(0);
+			pColorImage->set_pixelFormat(Vision::Image::BGR);
 			has_colorimage = true;
 			break;
 		case DC1394_COLOR_CODING_RGB8:
-			pColorImage.reset( new Image( m_width, m_height, 3 ) );
-			pGreyImage->set_origin(0);
-			pGreyImage->set_pixelFormat(Vision::Image::RGB);
-			memcpy( pColorImage->Mat().data, frame->image, m_width * m_height * 3 );
+			pColorImage.reset( new Image( m_width, m_height, 3, frame->image ) );
+			pColorImage->set_origin(0);
+			pColorImage->set_pixelFormat(Vision::Image::RGB);
 			has_colorimage = true;
 			break;
 		case DC1394_COLOR_CODING_MONO16:
@@ -566,7 +563,7 @@ void DC1394FrameGrabber::process_frame( )
 		case DC1394_COLOR_CODING_RAW8:
 		case DC1394_COLOR_CODING_RAW16:
 		default:
-			LOG4CPP_INFO(logger, "Unhandled ColorCoding.");
+			LOG4CPP_WARN(logger, "Unhandled ColorCoding: " << frame->color_coding );
     }
 
     /*
