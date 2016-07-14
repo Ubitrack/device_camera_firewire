@@ -47,6 +47,7 @@
 #include <utDataflow/ComponentFactory.h>
 #include <utMeasurement/Measurement.h>
 #include <utUtil/OS.h>
+#include <utUtil/TracingProvider.h>
 #include <utVision/Image.h>
 #include <utVision/Undistortion.h>
 #include <opencv/cv.h>
@@ -522,6 +523,10 @@ void DC1394FrameGrabber::process_frame( )
 
 	/* store the last frame's timestamp */
 	Measurement::Timestamp time( frame->timestamp * 1000 );
+
+#ifdef ENABLE_EVENT_TRACING
+	TRACEPOINT_MEASUREMENT_CREATE(getEventDomain(), time, getName().c_str(), "VideoCapture")
+#endif
 
 	boost::shared_ptr< Image > pColorImage;
 	boost::shared_ptr< Image > pGreyImage;
